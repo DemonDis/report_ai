@@ -6,6 +6,8 @@ export interface AiConfig {
   apiUrl: string;
   apiKey: string;
   model: string;
+  gitlabUrl?: string;
+  gitlabToken?: string;
 }
 
 export function getAiConfig(): AiConfig | null {
@@ -23,10 +25,12 @@ export function getAiConfig(): AiConfig | null {
       apiUrl: 'https://api.hydraai.ru/v1/',
       apiKey: '',
       model: 'mistral-nemo',
+      gitlabUrl: 'https://gitlab.com',
+      gitlabToken: '',
     };
     fs.writeFileSync(configPath, JSON.stringify(template, null, 2), 'utf-8');
     vscode.window.showWarningMessage(
-      'Создан .ilnsk в корне проекта. Заполните apiKey в этом файле.'
+      'Создан .ilnsk в корне проекта. Заполните apiKey, и при необходимости gitlabToken.'
     );
     return null;
   }

@@ -5,6 +5,7 @@ import {
   getChangesByDateRange,
   getChangesByCommits,
 } from './gitService';
+import { getChangesFromGitLab } from './gitlabService';
 import { generateReport } from './aiService';
 
 export function activate(context: vscode.ExtensionContext) {
@@ -18,8 +19,9 @@ export function activate(context: vscode.ExtensionContext) {
 
     const modeItems: ModeItem[] = [
       { label: '$(files) Не закоммиченные изменения', value: 'uncommitted' },
-      { label: '$(calendar) Изменения за период (даты)', value: 'date' },
+      { label: '$(calendar) Локальные коммиты за период', value: 'date' },
       { label: '$(git-commit) Изменения между коммитами', value: 'commits' },
+      { label: '$(server) GitLab за период (через API)', value: 'gitlab' },
     ];
 
     const picked = await vscode.window.showQuickPick(modeItems, {
@@ -33,6 +35,32 @@ export function activate(context: vscode.ExtensionContext) {
     try {
       if (picked.value === 'uncommitted') {
         changes = await getUncommittedChanges(workspaceRoot);
+      } else if (picked.value === 'gitlab') {
+        if (!config.gitlabToken) {
+          vscode.window.showWarningMessage('Укажите gitlabToken в .ilnsk');
+          return;
+        }
+        const fromDate = await vscode.window.showInputBox({
+          prompt: 'Начальная дата (например: 2024-01-01)',
+          placeHolder: 'YYYY-MM-DD',
+          validateInput: (v) => (v ? null : 'Введите дату'),
+        });
+        if (!fromDate) return;
+
+        const toDate = await vscode.window.showInputBox({
+          prompt: 'Конечная дата (например: 2024-12-31)',
+          placeHolder: 'YYYY-MM-DD',
+          validateInput: (v) => (v ? null : 'Введите дату'),
+        });
+        if (!toDate) return;
+
+        changes = await getChangesFromGitLab(
+          config.gitlabUrl || 'https://gitlab.com',
+          config.gitlabToken,
+          workspaceRoot,
+          fromDate,
+          toDate
+        );
       } else if (picked.value === 'date') {
         const fromDate = await vscode.window.showInputBox({
           prompt: 'Начальная дата (например: 2024-01-01)',
@@ -67,7 +95,7 @@ export function activate(context: vscode.ExtensionContext) {
         changes = await getChangesByCommits(workspaceRoot, fromCommit, toCommit);
       }
     } catch (e: any) {
-      vscode.window.showErrorMessage(`Ошибка Git: ${e.message}`);
+      vscode.window.showErrorMessage(`Ошибка: ${e.message}`);
       return;
     }
 
