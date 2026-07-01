@@ -23,10 +23,10 @@ export function getAiConfig(): AiConfig | null {
 
   if (!fs.existsSync(configPath)) {
     const template: AiConfig = {
-      apiUrl: 'https://api.hydraai.ru/v1/',
+      apiUrl: '',
       apiKey: '',
-      model: 'mistral-nemo',
-      gitlabUrl: 'https://gitlab.com',
+      model: '',
+      gitlabUrl: '',
       gitlabToken: '',
       rejectUnauthorized: false,
     };

@@ -37,9 +37,9 @@ VS Code расширение для автоматической генерац�
 
 ```json
 {
-  "apiUrl": "https://api.hydraai.ru/v1/",
+  "apiUrl": "",
   "apiKey": "ваш-api-ключ",
-  "model": "mistral-nemo",
+  "model": "",
   "gitlabUrl": "https://gitlab.com",
   "gitlabToken": "ваш-gitlab-token"
 }
