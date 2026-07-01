@@ -1,5 +1,5 @@
 {
-  "apiUrl": "https://api.hydraai.ru/v1/",
+  "apiUrl": "",
   "apiKey": "ваш-api-ключ-ai-модели",
   "model": "mistral-nemo",
   "gitlabUrl": "https://gitlab.com",
