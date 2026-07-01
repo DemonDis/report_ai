@@ -135,6 +135,13 @@ export function activate(context: vscode.ExtensionContext) {
       return;
     }
 
+    // Проверяем, есть ли коммиты (не запускаем AI, если коммитов нет)
+    if (changes.includes('Нет коммитов') || changes.includes('Нет незакоммиченных изменений')) {
+      const reportWithFooter = await appendReportFooter(changes, workspaceRoot);
+      showReportPanel(context, reportWithFooter);
+      return;
+    }
+
     vscode.window.withProgress(
       {
         location: vscode.ProgressLocation.Notification,
