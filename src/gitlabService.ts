@@ -43,12 +43,18 @@ export async function getGitLabCommits(
   projectPathEncoded: string,
   since: string,
   until: string,
-  rejectUnauthorized: boolean = false
+  rejectUnauthorized: boolean = false,
+  authorEmail?: string
 ): Promise<GitLabCommit[]> {
   const baseUrl = gitlabUrl.replace(/\/+$/, '');
-  const url = new URL(
-    `${baseUrl}/api/v4/projects/${projectPathEncoded}/repository/commits?since=${since}T00:00:00Z&until=${until}T23:59:59Z&per_page=100`
-  );
+  let urlStr = `${baseUrl}/api/v4/projects/${projectPathEncoded}/repository/commits?since=${since}T00:00:00Z&until=${until}T23:59:59Z&per_page=100`;
+  
+  // Добавляем фильтрацию по автору, если указан email
+  if (authorEmail) {
+    urlStr += `&author=${encodeURIComponent(authorEmail)}`;
+  }
+  
+  const url = new URL(urlStr);
 
   return new Promise((resolve, reject) => {
     const options: https.RequestOptions = {
@@ -85,16 +91,39 @@ export async function getGitLabCommits(
   });
 }
 
+function getGitAuthorEmail(cwd: string): Promise<string> {
+  return new Promise((resolve, reject) => {
+    exec('git config user.email', { cwd }, (err, stdout) => {
+      if (err) {
+        reject(new Error('Не удалось получить email автора из git config'));
+      } else {
+        resolve(stdout.trim());
+      }
+    });
+  });
+}
+
 export async function getChangesFromGitLab(
   gitlabUrl: string,
   token: string,
   cwd: string,
   since: string,
   until: string,
-  rejectUnauthorized: boolean = false
+  rejectUnauthorized: boolean = false,
+  authorOnly: boolean = false
 ): Promise<string> {
   const projectPath = await getProjectPath(cwd);
-  const commits = await getGitLabCommits(gitlabUrl, token, projectPath, since, until, rejectUnauthorized);
+  
+  let authorEmail: string | undefined;
+  if (authorOnly) {
+    try {
+      authorEmail = await getGitAuthorEmail(cwd);
+    } catch {
+      authorEmail = undefined;
+    }
+  }
+  
+  const commits = await getGitLabCommits(gitlabUrl, token, projectPath, since, until, rejectUnauthorized, authorEmail);
 
   if (commits.length === 0) {
     return 'Нет коммитов в GitLab за указанный период';

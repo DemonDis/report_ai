@@ -1,4 +1,5 @@
 import * as vscode from 'vscode';
+import { exec } from 'child_process';
 import { getAiConfig } from './configReader';
 import {
   getUncommittedChanges,
@@ -7,6 +8,35 @@ import {
 } from './gitService';
 import { getChangesFromGitLab } from './gitlabService';
 import { generateReport } from './aiService';
+
+function getGitAuthorName(cwd: string): Promise<string> {
+  return new Promise((resolve, reject) => {
+    exec('git config user.name', { cwd }, (err, stdout) => {
+      if (err) {
+        reject(new Error('Не удалось получить имя автора из git config'));
+      } else {
+        resolve(stdout.trim());
+      }
+    });
+  });
+}
+
+function appendReportFooter(report: string, cwd: string): Promise<string> {
+  return new Promise(async (resolve) => {
+    let authorName = 'Неизвестно';
+    try {
+      authorName = await getGitAuthorName(cwd);
+    } catch {
+      // ignore
+    }
+    
+    const now = new Date();
+    const dateStr = now.toLocaleDateString('ru-RU');
+    const timeStr = now.toLocaleTimeString('ru-RU');
+    
+    resolve(`${report}\n\n---\n*Отчет сгенерирован: ${dateStr} ${timeStr}, автор: ${authorName}*`);
+  });
+}
 
 export function activate(context: vscode.ExtensionContext) {
   const disposable = vscode.commands.registerCommand('gitReportAI.generate', async () => {
@@ -80,7 +110,8 @@ export function activate(context: vscode.ExtensionContext) {
           workspaceRoot,
           fromDate,
           toDate,
-          config.rejectUnauthorized ?? false
+          config.rejectUnauthorized ?? false,
+          true
         );
       } else {
         const fromCommit = await vscode.window.showInputBox({
@@ -113,7 +144,8 @@ export function activate(context: vscode.ExtensionContext) {
       async () => {
         try {
           const report = await generateReport(config, changes, picked.value);
-          showReportPanel(context, report);
+          const reportWithFooter = await appendReportFooter(report, workspaceRoot);
+          showReportPanel(context, reportWithFooter);
         } catch (e: any) {
           vscode.window.showErrorMessage(`Ошибка AI: ${e.message}`);
         }
