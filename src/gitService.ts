@@ -3,7 +3,8 @@ import { exec } from 'child_process';
 
 function runGitCommand(args: string[], cwd: string): Promise<string> {
   return new Promise((resolve, reject) => {
-    exec(`git ${args.join(' ')}`, { cwd, maxBuffer: 10 * 1024 * 1024 }, (err, stdout, stderr) => {
+    const command = `git ${args.join(' ')}`;
+    exec(command, { cwd, maxBuffer: 10 * 1024 * 1024, shell: '/bin/bash' }, (err, stdout, stderr) => {
       if (err) {
         reject(new Error(stderr || err.message));
       } else {
@@ -68,10 +69,11 @@ export async function getChangesByDateRange(
   const untilDate = toDate ? `${toDate}T23:59:59` : undefined;
 
   // Получаем коммиты с информацией об авторе: хеш, email, имя, тема
-  const logArgs = ['log', '--format=%H|%ae|%an|%s', '--no-color'];
+  // Используем двойные %% для экранирования в shell
+  const logArgs = ['log', '--format=%H%x7c%ae%x7c%an%x7c%s', '--no-color'];
   
-  if (sinceDate) logArgs.push(`--since="${sinceDate}"`);
-  if (untilDate) logArgs.push(`--until="${untilDate}"`);
+  if (sinceDate) logArgs.push(`--since=${sinceDate}`);
+  if (untilDate) logArgs.push(`--until=${untilDate}`);
   
   const log = await runGitCommand(logArgs, cwd);
 
