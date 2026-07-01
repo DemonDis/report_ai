@@ -61,6 +61,7 @@ ${changes}
         'Content-Type': 'application/json',
         Authorization: `Bearer ${config.apiKey}`,
       },
+      rejectUnauthorized: config.rejectUnauthorized ?? true,
     };
 
     const lib = url.protocol === 'https:' ? https : http;

@@ -42,7 +42,8 @@ export async function getGitLabCommits(
   token: string,
   projectPathEncoded: string,
   since: string,
-  until: string
+  until: string,
+  rejectUnauthorized: boolean = false
 ): Promise<GitLabCommit[]> {
   const baseUrl = gitlabUrl.replace(/\/+$/, '');
   const url = new URL(
@@ -58,6 +59,7 @@ export async function getGitLabCommits(
       headers: {
         'PRIVATE-TOKEN': token,
       },
+      rejectUnauthorized,
     };
 
     const lib = url.protocol === 'https:' ? https : http;
@@ -88,10 +90,11 @@ export async function getChangesFromGitLab(
   token: string,
   cwd: string,
   since: string,
-  until: string
+  until: string,
+  rejectUnauthorized: boolean = false
 ): Promise<string> {
   const projectPath = await getProjectPath(cwd);
-  const commits = await getGitLabCommits(gitlabUrl, token, projectPath, since, until);
+  const commits = await getGitLabCommits(gitlabUrl, token, projectPath, since, until, rejectUnauthorized);
 
   if (commits.length === 0) {
     return 'Нет коммитов в GitLab за указанный период';

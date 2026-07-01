@@ -8,6 +8,7 @@ export interface AiConfig {
   model: string;
   gitlabUrl?: string;
   gitlabToken?: string;
+  rejectUnauthorized?: boolean;
 }
 
 export function getAiConfig(): AiConfig | null {
@@ -27,6 +28,7 @@ export function getAiConfig(): AiConfig | null {
       model: 'mistral-nemo',
       gitlabUrl: 'https://gitlab.com',
       gitlabToken: '',
+      rejectUnauthorized: false,
     };
     fs.writeFileSync(configPath, JSON.stringify(template, null, 2), 'utf-8');
     vscode.window.showWarningMessage(

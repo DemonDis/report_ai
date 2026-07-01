@@ -43,14 +43,14 @@ export function activate(context: vscode.ExtensionContext) {
         const fromDate = await vscode.window.showInputBox({
           prompt: 'Начальная дата (например: 2024-01-01)',
           placeHolder: 'YYYY-MM-DD',
-          validateInput: (v) => (v ? null : 'Введите дату'),
+          validateInput: (v: string | undefined) => (v ? null : 'Введите дату'),
         });
         if (!fromDate) return;
 
         const toDate = await vscode.window.showInputBox({
           prompt: 'Конечная дата (например: 2024-12-31)',
           placeHolder: 'YYYY-MM-DD',
-          validateInput: (v) => (v ? null : 'Введите дату'),
+          validateInput: (v: string | undefined) => (v ? null : 'Введите дату'),
         });
         if (!toDate) return;
 
@@ -59,20 +59,21 @@ export function activate(context: vscode.ExtensionContext) {
           config.gitlabToken,
           workspaceRoot,
           fromDate,
-          toDate
+          toDate,
+          config.rejectUnauthorized ?? false
         );
       } else if (picked.value === 'date') {
         const fromDate = await vscode.window.showInputBox({
           prompt: 'Начальная дата (например: 2024-01-01)',
           placeHolder: 'YYYY-MM-DD',
-          validateInput: (v) => (v ? null : 'Введите дату'),
+          validateInput: (v: string | undefined) => (v ? null : 'Введите дату'),
         });
         if (!fromDate) return;
 
         const toDate = await vscode.window.showInputBox({
           prompt: 'Конечная дата (например: 2024-12-31)',
           placeHolder: 'YYYY-MM-DD',
-          validateInput: (v) => (v ? null : 'Введите дату'),
+          validateInput: (v: string | undefined) => (v ? null : 'Введите дату'),
         });
         if (!toDate) return;
 
@@ -81,14 +82,14 @@ export function activate(context: vscode.ExtensionContext) {
         const fromCommit = await vscode.window.showInputBox({
           prompt: 'Начальный коммит (хеш или ветка)',
           placeHolder: 'например: abc123 или main~5',
-          validateInput: (v) => (v ? null : 'Введите коммит'),
+          validateInput: (v: string | undefined) => (v ? null : 'Введите коммит'),
         });
         if (!fromCommit) return;
 
         const toCommit = await vscode.window.showInputBox({
           prompt: 'Конечный коммит (хеш или ветка)',
           placeHolder: 'например: def456 или feature/foo',
-          validateInput: (v) => (v ? null : 'Введите коммит'),
+          validateInput: (v: string | undefined) => (v ? null : 'Введите коммит'),
         });
         if (!toCommit) return;
 
