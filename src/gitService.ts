@@ -13,6 +13,18 @@ function runGitCommand(args: string[], cwd: string): Promise<string> {
   });
 }
 
+function getGitAuthor(cwd: string): Promise<string> {
+  return new Promise((resolve, reject) => {
+    exec('git config user.name', { cwd }, (err, stdout) => {
+      if (err) {
+        reject(new Error('Не удалось получить имя автора из git config'));
+      } else {
+        resolve(stdout.trim());
+      }
+    });
+  });
+}
+
 export async function getUncommittedChanges(cwd: string): Promise<string> {
   const status = await runGitCommand(['status', '--short'], cwd);
   if (!status) {
@@ -32,12 +44,29 @@ export async function getUncommittedChanges(cwd: string): Promise<string> {
 export async function getChangesByDateRange(
   cwd: string,
   fromDate: string,
-  toDate: string
+  toDate: string,
+  authorOnly: boolean = false
 ): Promise<string> {
-  const log = await runGitCommand(
-    ['log', '--oneline', `--after="${fromDate}"`, `--before="${toDate}"`, '--no-color'],
-    cwd
-  );
+  let authorName: string | undefined;
+  if (authorOnly) {
+    try {
+      authorName = await getGitAuthor(cwd);
+    } catch {
+      authorName = undefined;
+    }
+  }
+
+  // Формируем дату с явным указанием времени для включения всего дня
+  const sinceDate = fromDate ? `${fromDate}T00:00:00` : undefined;
+  const untilDate = toDate ? `${toDate}T23:59:59` : undefined;
+
+  const logArgs = ['log', '--oneline', '--no-color'];
+  
+  if (sinceDate) logArgs.push(`--since="${sinceDate}"`);
+  if (untilDate) logArgs.push(`--until="${untilDate}"`);
+  if (authorName) logArgs.push(`--author="${authorName}"`);
+  
+  const log = await runGitCommand(logArgs, cwd);
 
   if (!log) {
     return 'Нет коммитов за указанный период';

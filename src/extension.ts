@@ -19,6 +19,7 @@ export function activate(context: vscode.ExtensionContext) {
 
     const modeItems: ModeItem[] = [
       { label: '$(files) Не закоммиченные изменения', value: 'uncommitted' },
+      { label: '$(clock) Коммиты сегодня', value: 'today' },
       { label: '$(calendar) Локальные коммиты за период', value: 'date' },
       { label: '$(git-commit) Изменения между коммитами', value: 'commits' },
       { label: '$(server) GitLab за период (через API)', value: 'gitlab' },
@@ -35,6 +36,25 @@ export function activate(context: vscode.ExtensionContext) {
     try {
       if (picked.value === 'uncommitted') {
         changes = await getUncommittedChanges(workspaceRoot);
+      } else if (picked.value === 'today') {
+        const today = new Date().toISOString().split('T')[0];
+        changes = await getChangesByDateRange(workspaceRoot, today, today, true);
+      } else if (picked.value === 'date') {
+        const fromDate = await vscode.window.showInputBox({
+          prompt: 'Начальная дата (например: 2024-01-01)',
+          placeHolder: 'YYYY-MM-DD',
+          validateInput: (v: string | undefined) => (v ? null : 'Введите дату'),
+        });
+        if (!fromDate) return;
+
+        const toDate = await vscode.window.showInputBox({
+          prompt: 'Конечная дата (например: 2024-12-31)',
+          placeHolder: 'YYYY-MM-DD',
+          validateInput: (v: string | undefined) => (v ? null : 'Введите дату'),
+        });
+        if (!toDate) return;
+
+        changes = await getChangesByDateRange(workspaceRoot, fromDate, toDate, true);
       } else if (picked.value === 'gitlab') {
         if (!config.gitlabToken) {
           vscode.window.showWarningMessage('Укажите gitlabToken в .ilnsk');
@@ -62,22 +82,6 @@ export function activate(context: vscode.ExtensionContext) {
           toDate,
           config.rejectUnauthorized ?? false
         );
-      } else if (picked.value === 'date') {
-        const fromDate = await vscode.window.showInputBox({
-          prompt: 'Начальная дата (например: 2024-01-01)',
-          placeHolder: 'YYYY-MM-DD',
-          validateInput: (v: string | undefined) => (v ? null : 'Введите дату'),
-        });
-        if (!fromDate) return;
-
-        const toDate = await vscode.window.showInputBox({
-          prompt: 'Конечная дата (например: 2024-12-31)',
-          placeHolder: 'YYYY-MM-DD',
-          validateInput: (v: string | undefined) => (v ? null : 'Введите дату'),
-        });
-        if (!toDate) return;
-
-        changes = await getChangesByDateRange(workspaceRoot, fromDate, toDate);
       } else {
         const fromCommit = await vscode.window.showInputBox({
           prompt: 'Начальный коммит (хеш или ветка)',
