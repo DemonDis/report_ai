@@ -47,12 +47,19 @@ export async function getChangesByDateRange(
   toDate: string,
   authorOnly: boolean = false
 ): Promise<string> {
-  let authorName: string | undefined;
+  let authorEmail: string | undefined;
+  
   if (authorOnly) {
+    // Получаем email автора для точной фильтрации
     try {
-      authorName = await getGitAuthor(cwd);
+      authorEmail = await new Promise<string>((resolve, reject) => {
+        exec('git config user.email', { cwd }, (err, stdout) => {
+          if (err) reject(err);
+          else resolve(stdout.trim());
+        });
+      });
     } catch {
-      authorName = undefined;
+      authorEmail = undefined;
     }
   }
 
@@ -60,11 +67,11 @@ export async function getChangesByDateRange(
   const sinceDate = fromDate ? `${fromDate}T00:00:00` : undefined;
   const untilDate = toDate ? `${toDate}T23:59:59` : undefined;
 
-  const logArgs = ['log', '--oneline', '--no-color'];
+  // Получаем коммиты с информацией об авторе: хеш, email, имя, тема
+  const logArgs = ['log', '--format=%H|%ae|%an|%s', '--no-color'];
   
   if (sinceDate) logArgs.push(`--since="${sinceDate}"`);
   if (untilDate) logArgs.push(`--until="${untilDate}"`);
-  if (authorName) logArgs.push(`--author="${authorName}"`);
   
   const log = await runGitCommand(logArgs, cwd);
 
@@ -72,12 +79,43 @@ export async function getChangesByDateRange(
     return 'Нет коммитов за указанный период';
   }
 
-  const hashes = log.split('\n').map((l) => l.split(' ')[0]);
-  let result = `=== Коммиты с ${fromDate} по ${toDate} ===\n${log}\n\n`;
+  // Фильтруем коммиты по email автора
+  const lines = log.split('\n').filter(line => line.trim());
+  const commits: { hash: string; email: string; name: string; subject: string }[] = [];
+  
+  for (const line of lines) {
+    // Формат: <hash>|<email>|<name>|<subject>
+    const parts = line.split('|');
+    if (parts.length < 4) continue;
+    
+    const hash = parts[0];
+    const email = parts[1];
+    const name = parts[2];
+    const subject = parts.slice(3).join('|');
+    
+    // Если авторOnly и email не совпадает — пропускаем
+    if (authorOnly && authorEmail && email !== authorEmail) {
+      continue;
+    }
+    
+    commits.push({ hash, email, name, subject });
+  }
 
-  for (const hash of hashes) {
-    const diff = await runGitCommand(['show', hash, '--stat', '--no-color'], cwd);
-    result += `\n--- Коммит ${hash} ---\n${diff}\n`;
+  if (commits.length === 0) {
+    return 'Нет коммитов за указанный период';
+  }
+
+  // Формируем результат с указанием автора каждого коммита
+  let result = `=== Коммиты с ${fromDate} по ${toDate} ===\n`;
+  for (const c of commits) {
+    const marker = (authorOnly && authorEmail && c.email === authorEmail) ? '[ВЫ] ' : '';
+    result += `${marker}${c.hash.substring(0, 8)} ${c.subject} (${c.name} <${c.email}>)\n`;
+  }
+  result += '\n';
+
+  for (const c of commits) {
+    const diff = await runGitCommand(['show', c.hash, '--stat', '--no-color'], cwd);
+    result += `\n--- Коммит ${c.hash.substring(0, 8)} (${c.name}) ---\n${diff}\n`;
   }
 
   return result;
