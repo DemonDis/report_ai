@@ -14,7 +14,7 @@ VS Code расширение для автоматической генерац�
 
 1. Откройте проект в VS Code (проект должен быть Git-репозиторием)
 
-2. Нажмите `Cmd+Shift+P` (macOS) / `Ctrl+Shift+P` (Windows/Linux)
+2. Нажмите `Ctrl+Shift+P` (Windows/Linux)
 
 3. Выполните команду: **Git Report AI: Сформировать отчет**
 

@@ -1,7 +1,7 @@
 {
   "apiUrl": "",
   "apiKey": "ваш-api-ключ-ai-модели",
-  "model": "mistral-nemo",
+  "model": "",
   "gitlabUrl": "https://gitlab.com",
   "gitlabToken": "ваш-gitlab-personal-access-token",
   "rejectUnauthorized": false
