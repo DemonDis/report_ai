@@ -3,6 +3,7 @@
   "displayName": "Git Report AI",
   "description": "Формирует отчет о изменениях в Git через AI",
   "version": "1.0.0",
+  "icon": "img/icon.png",
   "publisher": "dimart",
   "license": "MIT",
   "engines": {
